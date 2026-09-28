@@ -1,0 +1,53 @@
+services:
+  app:
+    build: .
+    ports:
+      - "127.0.0.1:${APP_PORT:-8000}:8000"
+    environment:
+      APP_NAME: SellerBoost
+      APP_ENV: local
+      APP_DEBUG: "false"
+      APP_URL: ${APP_URL:-http://localhost:8000}
+      APP_KEY: ${APP_KEY:-}
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: sellerboost
+      DB_USERNAME: sellerboost
+      DB_PASSWORD: ${DB_PASSWORD:-sellerboost_local}
+      SESSION_DRIVER: database
+      SESSION_ENCRYPT: "true"
+      CACHE_STORE: database
+      MOCK_STRIPE: ${MOCK_STRIPE:-true}
+      PAID_PATH_ENABLED: ${PAID_PATH_ENABLED:-true}
+      STRIPE_SECRET: ${STRIPE_SECRET:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_PRICE_ID: ${STRIPE_PRICE_ID:-}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@sellerboost.test}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-DemoSellerBoost!2026}
+    volumes:
+      - app_storage:/app/storage
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/up"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: sellerboost
+      POSTGRES_USER: sellerboost
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-sellerboost_local}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sellerboost -d sellerboost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+volumes:
+  postgres_data:
+  app_storage:
